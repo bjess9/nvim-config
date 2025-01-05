@@ -677,7 +677,42 @@ require('lazy').setup({
       }
     end,
   },
+  {
+    'yacineMTB/dingllm.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local dingllm = require 'dingllm'
 
+      -- Define your prompts
+      local system_prompt = 'You should replace the code that you are sent, only following the comments. Do not talk at all. Only output valid code.'
+      local helpful_prompt = 'You are a helpful assistant. What I have sent are my notes so far.'
+
+      -- Set up Claude functions
+      local function claude_help()
+        dingllm.invoke_llm_and_stream_into_editor({
+          url = 'https://api.anthropic.com/v1/messages',
+          model = 'claude-3-5-sonnet-20241022',
+          api_key_name = 'ANTHROPIC_API_KEY',
+          system_prompt = helpful_prompt,
+          replace = false,
+        }, dingllm.make_anthropic_spec_curl_args, dingllm.handle_anthropic_spec_data)
+      end
+
+      local function claude_replace()
+        dingllm.invoke_llm_and_stream_into_editor({
+          url = 'https://api.anthropic.com/v1/messages',
+          model = 'claude-3-5-sonnet-20241022',
+          api_key_name = 'ANTHROPIC_API_KEY',
+          system_prompt = system_prompt,
+          replace = true,
+        }, dingllm.make_anthropic_spec_curl_args, dingllm.handle_anthropic_spec_data)
+      end
+
+      -- Set up keymaps
+      vim.keymap.set({ 'n', 'v' }, '<leader>ch', claude_help, { desc = 'Claude Help' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>cr', claude_replace, { desc = 'Claude Replace' })
+    end,
+  },
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
