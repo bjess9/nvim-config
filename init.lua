@@ -617,7 +617,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         jdtls = {},
-        csharp_ls = {},
+        -- csharp_ls = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -912,6 +912,39 @@ require('lazy').setup({
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
       require('mini.surround').setup()
+
+      local starter = require 'mini.starter'
+      starter.setup {
+        evaluate_single = true, -- Open item if it's the only one without needing Enter
+        header = [[
+    ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗
+    ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║
+    ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║
+    ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
+    ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
+    ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝
+    Welcome to Kickstart.nvim - ]] .. os.date '%A, %B %d, %Y',
+        items = {
+          -- Built-in actions (e.g., edit new buffer, quit)
+          starter.sections.builtin_actions(),
+          -- Telescope integration for quick searches
+          {
+            { name = 'Find Files (<leader>sf)', action = 'Telescope find_files' },
+            { name = 'Live Grep (<leader>sg)', action = 'Telescope live_grep' },
+            { name = 'Recent Files (<leader>s.)', action = 'Telescope oldfiles' },
+          },
+          -- Recent files from current project and globally
+          starter.sections.recent_files(10, false), -- Non-project files
+          starter.sections.recent_files(10, true), -- Project files
+          -- Sessions (if you enable mini.sessions later)
+          starter.sections.sessions(5, true),
+        },
+        content_hooks = {
+          starter.gen_hook.adding_bullet '> ', -- Custom bullet style
+          starter.gen_hook.indexing('all', { 'Builtin actions' }), -- Number items
+          starter.gen_hook.padding(3, 2), -- Add padding for readability
+        },
+      }
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
