@@ -15,7 +15,14 @@ return {
   },
   opts = {
     filesystem = {
+      filtered_items = {
+        visible = true, -- When true, they will be displayed but grayed out
+        show_hidden_count = true,
+        hide_dotfiles = false, -- This is the key setting to show dotfiles
+        hide_gitignored = false, -- Optional: if you also want to show gitignored files
+      },
       window = {
+        position = 'right',
         mappings = {
           ['\\'] = 'close_window',
         },

@@ -90,8 +90,13 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Disable editor config
+vim.g.editorconfig = false
+
+vim.o.smoothscroll = true
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -102,7 +107,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -185,10 +190,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -344,6 +349,7 @@ require('lazy').setup({
 
       -- Document existing key chains
       spec = {
+        { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
@@ -428,7 +434,9 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', function()
+        builtin.find_files { hidden = true }
+      end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -480,13 +488,13 @@ require('lazy').setup({
     'neovim/nvim-lspconfig',
     dependencies = {
       -- Automatically install LSPs and related tools to stdpath for Neovim
-      -- Mason must be loaded before its dependents so we need to set it up here.
       -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
       { 'mason-org/mason.nvim', opts = {} },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
+      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
       { 'j-hui/fidget.nvim', opts = {} },
 
       -- Allows extra capabilities provided by blink.cmp
@@ -634,10 +642,10 @@ require('lazy').setup({
         underline = { severity = vim.diagnostic.severity.ERROR },
         signs = vim.g.have_nerd_font and {
           text = {
-            [vim.diagnostic.severity.ERROR] = '󰅚 ',
-            [vim.diagnostic.severity.WARN] = '󰀪 ',
-            [vim.diagnostic.severity.INFO] = '󰋽 ',
-            [vim.diagnostic.severity.HINT] = '󰌶 ',
+            [vim.diagnostic.severity.ERROR] = '󰅚',
+            [vim.diagnostic.severity.WARN] = '󰅚',
+            [vim.diagnostic.severity.INFO] = '󰅚',
+            [vim.diagnostic.severity.HINT] = '󰅚',
           },
         } or {},
         virtual_text = {
@@ -671,6 +679,34 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        jdtls = {},
+        csharp_ls = {
+          -- Custom root_dir to use the .sln or .csproj passed to Neovim
+          root_dir = function()
+            local solution_file = vim.fn.argv()[0]
+            if solution_file and (solution_file:match '%.sln$' or solution_file:match '%.csproj$') then
+              -- Use the directory of the .sln or .csproj as the root
+              return vim.fn.fnamemodify(solution_file, ':p:h')
+            end
+            -- Fallback: Use the current working directory or find a single .sln/.csproj
+            local files = vim.fn.glob('*.sln', true, true)
+            if #files == 0 then
+              files = vim.fn.glob('*.csproj', true, true)
+            end
+            if #files == 1 then
+              return vim.fn.fnamemodify(files[1], ':p:h')
+            end
+            -- Default to current directory if no single file is found
+            return vim.fn.getcwd()
+          end,
+          -- Optional: Initialization options for csharp_ls
+          settings = {
+            csharp = {
+              -- You can add custom settings here if needed
+              -- See https://github.com/razzmatazz/csharp-language-server for options
+            },
+          },
+        },
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -701,21 +737,19 @@ require('lazy').setup({
       }
 
       -- Ensure the servers and tools above are installed
-      --
-      -- To check the current status of installed tools and/or manually install
-      -- other tools, you can run
+      --  To check the current status of installed tools and/or manually install
+      --  other tools, you can run
       --    :Mason
       --
-      -- You can press `g?` for help in this menu.
-      --
-      -- `mason` had to be setup earlier: to configure its options see the
-      -- `dependencies` table for `nvim-lspconfig` above.
-      --
+      --  You can press `g?` for help in this menu.
+      require('mason').setup()
+
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'csharp-language-server',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -735,7 +769,6 @@ require('lazy').setup({
       }
     end,
   },
-
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
@@ -768,6 +801,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        jdtls = { 'google-java-format' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -881,25 +915,96 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    'catppuccin/nvim',
+    name = 'catppuccin',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
+      require('catppuccin').setup {
+        flavour = 'macchiato',
+        transparent_background = true,
+        integrations = {
+          cmp = true,
+          treesitter = true,
+          gitsigns = true,
+          mini = {
+            enabled = true,
+          },
         },
       }
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- any other, such as 'catppuccin-latte', 'catppuccin-frappe', or 'catppuccin-mocha'.
+      vim.cmd.colorscheme 'catppuccin'
     end,
   },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+
+  {
+    'github/copilot.vim',
+    config = function()
+      vim.g.copilot_no_tab_map = true
+      vim.g.copilot_assume_mapped = true
+    end,
+  },
+
+  {
+    'olimorris/codecompanion.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-telescope/telescope.nvim',
+      'stevearc/dressing.nvim',
+      'github/copilot.vim',
+    },
+    opts = {
+      adapters = {
+        -- Extend Copilot adapter if needed (e.g., custom token path)
+        copilot = function()
+          return require('codecompanion.adapters').extend(require('codecompanion.adapters').extend 'copilot', {
+            env = {
+              -- Optional: Specify token path if non-standard
+              copilot_config_path = vim.fn.expand '~/.config/github-copilot/hosts.json',
+            },
+          })
+        end,
+      },
+      strategies = {
+        chat = {
+          adapter = {
+            name = 'copilot',
+            model = 'claude-sonnet-4',
+          },
+          opts = {
+            diagnostic = false,
+          },
+        },
+        -- Inline disabled: Don't set or comment out to avoid completions
+        -- inline = { adapter = 'copilot' },
+      },
+      display = {
+        chat = {
+          window = {
+            layout = 'vertical', -- Or 'float' for quick show/hide
+          },
+          show_settings = true, -- Shows model/context in chat header
+        },
+      },
+    },
+    keys = {
+      -- Toggle chat quickly (preserves history)
+      { '<leader>cc', '<cmd>CodeCompanionChat Toggle<cr>', desc = '[C]opilot [C]hat Toggle' },
+      -- Open new chat
+      { '<leader>co', '<cmd>CodeCompanionChat<cr>', desc = '[C]opilot Chat [O]pen' },
+      -- Actions with selection (e.g., explain code)
+      { '<leader>ce', ':CodeCompanionActions<cr>', mode = { 'n', 'v' }, desc = '[C]opilot [E]xplain/Actions' },
+      -- Picker for agents/scripts (e.g., custom prompts like "check PRs")
+      { '<leader>ca', '<cmd>CodeCompanionActions<cr>', desc = '[C]opilot [A]gents/Scripts' },
+    },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -918,6 +1023,33 @@ require('lazy').setup({
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
       require('mini.surround').setup()
+
+      local starter = require 'mini.starter'
+      starter.setup {
+        evaluate_single = true, -- Open item if it's the only one without needing Enter
+        header = [[
+    Welcome to Kickstart.nvim - ]] .. os.date '%A, %B %d, %Y',
+        items = {
+          -- Built-in actions (e.g., edit new buffer, quit)
+          starter.sections.builtin_actions(),
+          -- Telescope integration for quick searches
+          {
+            { name = 'Find Files (<leader>sf)', action = 'Telescope find_files' },
+            { name = 'Live Grep (<leader>sg)', action = 'Telescope live_grep' },
+            { name = 'Recent Files (<leader>s.)', action = 'Telescope oldfiles' },
+          },
+          -- Recent files from current project and globally
+          starter.sections.recent_files(10, false), -- Non-project files
+          starter.sections.recent_files(10, true), -- Project files
+          -- Sessions (if you enable mini.sessions later)
+          starter.sections.sessions(5, true),
+        },
+        content_hooks = {
+          starter.gen_hook.adding_bullet '> ', -- Custom bullet style
+          starter.gen_hook.indexing('all', { 'Builtin actions' }), -- Number items
+          starter.gen_hook.padding(3, 2), -- Add padding for readability
+        },
+      }
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -973,12 +1105,12 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1012,5 +1144,11 @@ require('lazy').setup({
   },
 })
 
+-- Load local overrides if they exist (not in git)
+-- This allows work-specific settings without polluting the main config
+local local_overrides = vim.fn.stdpath 'config' .. '/local_overrides.lua'
+if vim.fn.filereadable(local_overrides) == 1 then
+  dofile(local_overrides)
+end
+
 -- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et

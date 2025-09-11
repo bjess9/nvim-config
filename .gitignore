@@ -4,4 +4,6 @@ test.sh
 nvim
 
 spell/
-lazy-lock.json
+
+# Local work-specific overrides (not in git)
+local_overrides.lua
