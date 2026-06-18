@@ -436,7 +436,6 @@ do
     },
     -- Document existing key chains
     spec = {
-      { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
       { '<leader>s', group = '[S]earch' },
       { '<leader>t', group = '[T]oggle' },
       { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
@@ -538,41 +537,7 @@ do
   -- ... and there is more!
   --  Check out: https://github.com/nvim-mini/mini.nvim
 
-  -- GitHub Copilot
-  vim.pack.add { gh 'github/copilot.vim' }
-  vim.g.copilot_no_tab_map = true
-  vim.g.copilot_assume_mapped = true
-
-  -- CodeCompanion (AI chat)
-  vim.pack.add { gh 'olimorris/codecompanion.nvim' }
-  vim.pack.add { gh 'stevearc/dressing.nvim' }
-  require('codecompanion').setup {
-    adapters = {
-      copilot = function()
-        return require('codecompanion.adapters').extend(require('codecompanion.adapters').extend 'copilot', {
-          env = {
-            copilot_config_path = vim.fn.expand '~/.config/github-copilot/hosts.json',
-          },
-        })
-      end,
-    },
-    strategies = {
-      chat = {
-        adapter = { name = 'copilot', model = 'claude-sonnet-4' },
-        opts = { diagnostic = false },
-      },
-    },
-    display = {
-      chat = {
-        window = { layout = 'vertical' },
-        show_settings = true,
-      },
-    },
-  }
-  vim.keymap.set('n', '<leader>cc', '<cmd>CodeCompanionChat Toggle<cr>', { desc = '[C]opilot [C]hat Toggle' })
-  vim.keymap.set('n', '<leader>co', '<cmd>CodeCompanionChat<cr>', { desc = '[C]opilot Chat [O]pen' })
-  vim.keymap.set({ 'n', 'v' }, '<leader>ce', ':CodeCompanionActions<cr>', { desc = '[C]opilot [E]xplain/Actions' })
-  vim.keymap.set('n', '<leader>ca', '<cmd>CodeCompanionActions<cr>', { desc = '[C]opilot [A]gents/Scripts' })
+  
 end
 
 -- ============================================================
